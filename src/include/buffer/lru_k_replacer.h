@@ -12,18 +12,19 @@
 
 #pragma once
 
+#include <algorithm>
 #include <limits>
 #include <list>
 #include <mutex>  // NOLINT
 #include <unordered_map>
+#include <utility>
 #include <vector>
-
 #include "common/config.h"
 #include "common/macros.h"
 
 namespace bustub {
 
-enum class AccessType { Unknown = 0, Get, Scan };
+enum class AccessType { Unknown = 0, Lookup, Scan, Index };
 
 class LRUKNode {
  private:
@@ -44,7 +45,7 @@ class LRUKNode {
  * current timestamp and the timestamp of kth previous access.
  *
  * A frame with less than k historical references is given
- * +inf as its backward k-distance. When multipe frames have +inf backward k-distance,
+ * +inf as its backward k-distance. When multiple frames have +inf backward k-distance,
  * classical LRU algorithm is used to choose victim.
  */
 class LRUKReplacer {
@@ -150,12 +151,22 @@ class LRUKReplacer {
  private:
   // TODO(student): implement me! You can replace these member variables as you like.
   // Remove maybe_unused if you start using them.
-  [[maybe_unused]] std::unordered_map<frame_id_t, LRUKNode> node_store_;
-  [[maybe_unused]] size_t current_timestamp_{0};
-  [[maybe_unused]] size_t curr_size_{0};
-  [[maybe_unused]] size_t replacer_size_;
-  [[maybe_unused]] size_t k_;
-  [[maybe_unused]] std::mutex latch_;
+  std::unordered_map<frame_id_t, LRUKNode> node_store_;
+  size_t current_timestamp_{0};
+  size_t curr_size_{0};
+  size_t replacer_size_;
+  size_t k_;
+  size_t max_size_;
+  std::mutex latch_;
+  using k_time = std::pair<frame_id_t, size_t>;  // record the accessing times
+  using timestamp = std::list<size_t>;           // timestamp
+  std::unordered_map<frame_id_t, timestamp> hist_;
+  std::unordered_map<frame_id_t, size_t> record_cnt_;
+  std::unordered_map<frame_id_t, bool> evictable_;
+  std::list<frame_id_t> new_frames_;
+  std::unordered_map<frame_id_t, std::list<frame_id_t>::iterator> new_pos_;
+  std::list<k_time> k_frames_;
+  std::unordered_map<frame_id_t, std::list<k_time>::iterator> k_pos_;
+  static auto CmpTimestamp(const k_time &f1, const k_time &f2) -> bool;
 };
-
 }  // namespace bustub
