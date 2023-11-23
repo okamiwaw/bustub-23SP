@@ -18,6 +18,7 @@ namespace bustub {
 LRUKReplacer::LRUKReplacer(size_t num_frames, size_t k) : replacer_size_(num_frames), k_(k) { max_size_ = num_frames; }
 
 auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
+  std::lock_guard<std::mutex> lock(latch_);
   if (Size() == 0) {
     return false;
   }
@@ -47,7 +48,7 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
   }
   return false;
 }
-void LRUKReplacer::RecordAccess(frame_id_t frame_id, [[maybe_unused]] AccessType access_type) {
+void LRUKReplacer::RecordAccess(frame_id_t frame_id, AccessType access_type) {
   std::lock_guard<std::mutex> lock(latch_);
   if (frame_id > static_cast<frame_id_t>(replacer_size_)) {
     throw std::exception();
